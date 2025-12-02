@@ -108,11 +108,8 @@ def preprocess_dataset(filepath, MAXLEN,onto,label_space):
     print("Read input complete")
     return pro_id, sequences, labels
 
-# Organize sequences embeddings
 class StabilitylandscapeDataset(Dataset):
     def __init__(self, sequences, labels):
-        assert len(sequences) == len(labels), \
-            f"初始化时长度不匹配！sequences: {len(sequences)}, labels: {len(labels)}"
         self.sequences = sequences
         self.labels = labels
 
@@ -125,37 +122,26 @@ class StabilitylandscapeDataset(Dataset):
         return len(self.sequences)
     
 class IndexedStabilitylandscapeDataset(StabilitylandscapeDataset):
-    def __init__(self, sequences, labels, embeddings=None, nlp_embeddings=None,domain_features=None):
+    def __init__(self, sequences, labels, embeddings=None, domain_features=None):
         super().__init__(sequences, labels)
         self.embeddings = embeddings
-        self.nlp_embeddings = nlp_embeddings  # 添加NLP embeddings
-        self.domain_features=domain_features  #添加结构域特征    
+        self.domain_features=domain_features 
     
     def __getitem__(self, idx):
         data = super().__getitem__(idx)
-        data['index'] = idx  # 添加索引信息
+        data['index'] = idx  
         
-        # 如果有预计算的ESM embeddings,直接使用池化后的结果
         if self.embeddings is not None:
-            data['embedding'] = self.embeddings[idx]  # 已经是池化后的 [embed_dim]
-        
-        # 如果有预计算的NLP embeddings,添加到data中
-        if self.nlp_embeddings is not None:
-            data['nlp_embedding'] = self.nlp_embeddings[idx]  #已经是池化后的[nlp_dim]
+            data['embedding'] = self.embeddings[idx]  
         
         if self.domain_features is not None:
-            data['domain_feature'] = torch.FloatTensor(self.domain_features[idx])  # 添加结构域特征
+            data['domain_feature'] = torch.FloatTensor(self.domain_features[idx])  
         return data
     
     def __len__(self):
         return len(self.sequences)
 
-
-# =====================
-# 数据加载和预处理
-# =====================
 def load_datasets(config, onto, label_space):
-    """加载训练和测试数据集"""
     print("Loading datasets...")
     train_id, training_sequences, training_labels = preprocess_dataset(
         config['train_path'], config['MAXLEN'], onto, label_space
@@ -170,14 +156,10 @@ def load_datasets(config, onto, label_space):
     
     return train_id, training_sequences, training_labels, test_id, test_sequences, test_labels
 
-# =====================
-# 标签处理
-# =====================
+
 def process_labels_for_ontology(config, key, label_space, training_labels, test_labels, onto, enc, ia_dict):
-    """处理特定本体的标签"""
     print(f"\n{'='*50}")
     print(f"Processing labels for ontology: {key}")
-    print(f"{'='*50}")
     
     if config['run_mode'] == "sample":
         label_processing_cache = os.path.join(config['cache_dir'], f"labels/{config['occ_num']}/label_processed_{key}_sample.pkl")
@@ -188,7 +170,6 @@ def process_labels_for_ontology(config, key, label_space, training_labels, test_
     label_processing_dir = os.path.dirname(label_processing_cache)
     if label_processing_dir and not os.path.exists(label_processing_dir):
         os.makedirs(label_processing_dir, exist_ok=True)
-        print(f"创建缓存目录: {label_processing_dir}")
 
     if os.path.exists(label_processing_cache):
         print(f"Loading preprocessed labels for {key} from cache...")
@@ -201,28 +182,23 @@ def process_labels_for_ontology(config, key, label_space, training_labels, test_
     
     print(f"Processing labels for {key} from scratch...")
     
-    # 筛选高频标签
     label_tops = Counter(label_space[key])
     top_labels = sorted([label for label in set(label_space[key]) if label_tops[label] > config['occ_num']])
     print(f'Top label numbers: {len(top_labels)}')
     label_list = top_labels
     print("Top labels (first 10):", label_list[:10])
     
-    # 标签编码
     labspace = enc.fit_transform(label_list)
     onto_parent = parent(enc, key, label_list, onto, label_space)
     label_num = len(enc.classes_)
     print(f'Number of classes: {label_num}')
     
-    # 转换标签为二进制格式
     label_set = set(label_list)
     training_labels_binary = convert_labels_to_binary(training_labels[key], label_set, enc, label_num)
     test_labels_binary = convert_labels_to_binary(test_labels[key], label_set, enc, label_num)
     
-    # 构建IA权重矩阵
     ia_list = build_ia_weight_matrix(ia_dict, label_set, enc, label_num)
     
-    # 保存处理结果
     print(f"Saving processed labels to {label_processing_cache}")
     with open(label_processing_cache, 'wb') as f:
         pickle.dump({
@@ -239,7 +215,6 @@ def process_labels_for_ontology(config, key, label_space, training_labels, test_
     return label_list, training_labels_binary, test_labels_binary, enc, ia_list, onto_parent, label_num
 
 def convert_labels_to_binary(labels, label_set, enc, label_num):
-    """将标签转换为二进制格式"""
     print("Converting labels to binary format...")
     labels_binary = []
     for label in tqdm(labels, desc="Processing labels"):
@@ -255,13 +230,6 @@ def convert_labels_to_binary(labels, label_set, enc, label_num):
     return labels_binary
 
 def to_label_tensor(y):
-    """
-    y 可以是：
-      - list of list/np.array，长度 N，每个元素长度 L
-      - np.ndarray，形状 [N, L]
-      - torch.Tensor，形状 [N, L]
-    返回 float32 张量，形状 [N, L]（在 CPU）
-    """
     if isinstance(y, torch.Tensor):
         if y.dtype != torch.float32:
             y = y.float()
@@ -269,20 +237,14 @@ def to_label_tensor(y):
     elif isinstance(y, np.ndarray):
         return torch.from_numpy(y.astype(np.float32))
     elif isinstance(y, list):
-        # 确保是矩阵形状
         if len(y) == 0:
             raise ValueError("Empty label list.")
-        # 若元素是 list/array，直接转换
         return torch.tensor(y, dtype=torch.float32)
     else:
         raise TypeError(f"Unsupported type for labels: {type(y)}")
 
 def compute_pos_weight(y, smoothing=1.0, clip_min=1.0, clip_max=10.0,
                        use_log_compress=True, device=None):
-    """
-    y: [N, L] (list/np/torch) in {0,1}; 会内部转换到 CPU 上进行统计
-    device: 返回的 pos_weight 放到这个设备（如 'cuda' 或 model.device）。None 则留在 CPU。
-    """
     y = to_label_tensor(y)   # CPU float32 tensor [N, L]
     N = y.size(0)
     pos = y.sum(dim=0)       # [L]
@@ -294,7 +256,6 @@ def compute_pos_weight(y, smoothing=1.0, clip_min=1.0, clip_max=10.0,
     else:
         pw = (neg + smoothing) / (pos + smoothing)
 
-    # 裁剪
     if clip_min is not None or clip_max is not None:
         if clip_min is None: clip_min = float('-inf')
         if clip_max is None: clip_max = float('inf')
@@ -305,7 +266,6 @@ def compute_pos_weight(y, smoothing=1.0, clip_min=1.0, clip_max=10.0,
     return pw  # [L] float tensor
 
 def build_ia_weight_matrix(ia_dict, label_set, enc, label_num):
-    """构建IA权重矩阵"""
     print("Building IA weight matrix...")
     ia_list = torch.ones(1, label_num).cuda()
     for _tag, _value in ia_dict.items():
@@ -319,17 +279,7 @@ def build_ia_weight_matrix(ia_dict, label_set, enc, label_num):
     return ia_list
 
 def create_ontology_adjacency_matrix(onto_parent, label_num, key,config):
-    """
-    根据本体父类关系创建邻接矩阵，支持文件缓存
-    
-    参数:
-        onto_parent: 包含每个标签父类位置信息的字典
-        label_num: 标签数量
-        cache_path: 缓存文件路径，如果为None则不使用缓存
-    """
-    # 构建缓存文件路径，包含运行模式标识
-    cache_path=f"/d/cuiby/paper_data/embeddings_cache/adj/{config['occ_num']}/adj_matrix_{key}_{config['run_mode']}.pt"
-    # 如果有缓存文件且存在，则直接加载
+    cache_path=f"./data/embeddings_cache/adj/{config['occ_num']}/adj_matrix_{key}_{config['run_mode']}.pt"
     if cache_path is not None and os.path.exists(cache_path):
         print(f"Loading adjacency matrix from cache: {cache_path}")
         try:
@@ -339,19 +289,17 @@ def create_ontology_adjacency_matrix(onto_parent, label_num, key,config):
         except Exception as e:
             print(f"Failed to load cache: {e}, regenerating...")
     
-    # 生成新的邻接矩阵
     print("Generating new adjacency matrix...")
     adj_matrix = torch.zeros(label_num, label_num).cuda()
     
     for i in range(label_num):
         position = onto_parent[i]['pos'].copy()
-        adj_matrix[i, i] = 1.0  # 自连接
+        adj_matrix[i, i] = 1.0 
         for j in position:
-            adj_matrix[i, j] = 1.0  # 父子关系连接
+            adj_matrix[i, j] = 1.0  
     
     sparse_adj_matrix = adj_matrix.to_sparse()
     
-    # 保存到缓存文件
     if cache_path is not None:
         os.makedirs(os.path.dirname(cache_path), exist_ok=True)
         try:
@@ -362,25 +310,12 @@ def create_ontology_adjacency_matrix(onto_parent, label_num, key,config):
     
     return sparse_adj_matrix
 
-def verify_alignment(train_esm_embeddings, train_nlp, train_id, test_esm_embeddings, test_nlp, test_id):
-    """验证数据对齐性"""
-    print(f"\nAlignment verification:")
-    print(f"Train samples: ESM={len(train_esm_embeddings)}, NLP={len(train_nlp)}, IDs={len(train_id)}")
-    print(f"Test samples: ESM={len(test_esm_embeddings)}, NLP={len(test_nlp)}, IDs={len(test_id)}")
-    assert len(train_esm_embeddings) == len(train_nlp) == len(train_id), "Train data alignment error!"
-    assert len(test_esm_embeddings) == len(test_nlp) == len(test_id), f"Test data alignment error!"
-
-# =====================
-# 数据集和DataLoader创建
-# =====================
-def create_dataloaders(config, training_sequences, training_labels_binary, train_esm_embeddings, train_nlp,
-                       test_sequences, test_labels_binary, test_esm_embeddings, test_nlp,train_domain_features, test_domain_features):
-    """创建训练和测试DataLoader"""
+def create_dataloaders(config, training_sequences, training_labels_binary, train_esm_embeddings
+                       test_sequences, test_labels_binary, test_esm_embeddings,train_domain_features, test_domain_features):
     training_dataset = IndexedStabilitylandscapeDataset(
         training_sequences, 
         training_labels_binary, 
         embeddings=train_esm_embeddings,
-        nlp_embeddings=train_nlp,
         domain_features=train_domain_features
 
     )
@@ -388,7 +323,6 @@ def create_dataloaders(config, training_sequences, training_labels_binary, train
         test_sequences, 
         test_labels_binary, 
         embeddings=test_esm_embeddings,
-        nlp_embeddings=test_nlp,
         domain_features=test_domain_features
     )
     
@@ -396,15 +330,15 @@ def create_dataloaders(config, training_sequences, training_labels_binary, train
         training_dataset, 
         batch_size=config['batch_size_train'], 
         shuffle=True,
-        num_workers=config.get('num_workers', 0),  # 根据CPU核心数设置
-        pin_memory=False  # 如果使用GPU，建议设置为True
+        num_workers=config.get('num_workers', 0),  
+        pin_memory=False  
     )
     test_dataloader = DataLoader(
         test_dataset, 
         batch_size=config['batch_size_test'], 
         shuffle=False,
-        num_workers=config.get('num_workers', 0),  # 根据CPU核心数设置
-        pin_memory=False  # 如果使用GPU，建议设置为True
+        num_workers=config.get('num_workers', 0),  
+        pin_memory=False  
     )
     
     return train_dataloader, test_dataloader

@@ -2,8 +2,6 @@ from graph import Prediction, GroundTruth, propagate
 import numpy as np
 import logging
 
-# •obo_file: OBO 格式的文本文件路径，通常是类似 Gene Ontology (GO) 的结构化数据。
-# ••valid_rel: 只处理指定的关系类型，默认为 "is_a"和 "part_of"。
 def obo_parser(obo_file, valid_rel=("is_a", "part_of")):
     """
     Parse a OBO file and returns a list of ontologies, one for each namespace.
