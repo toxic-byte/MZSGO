@@ -4,28 +4,61 @@ from sklearn import preprocessing
 import sys
 import torch
 import numpy as np
+import argparse
 
 sys.path.append(r"utils")
 from dataset import obo_graph,load_datasets,process_labels_for_ontology,create_dataloaders,compute_pos_weight,create_ontology_adjacency_matrix
 from config import setup_environment, get_config
-from nlp_embed import load_nlp_model,compute_nlp_embeddings_list
-from embed import compute_esm_embeddings,load_text_pretrained_domain_features
+from go_embed import load_nlp_model_name,load_nlp_model_path,compute_nlp_embeddings_list
+from esm_embed import compute_esm_embeddings
+from domain_embed import load_text_pretrained_domain_features
 from trainer import train_model_for_ontology
 from util import filter_samples_with_labels,save_results
 
-def main():
-    seed = setup_environment()
-    # config = get_config(run_mode="full", text_mode="all",occ_num=0,batch_size_train=64,
-    # batch_size_test=64,nlp_model_type="qwen_4b",epoch_num=50,hidden_dim=512,learning_rate=1e-4,
-    # model='domain_text_gated',dropout=0.5,esm_type="esm2_t33_650M_UR50D",embed_dim=1280)
+def parse_args():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('--run_mode', type=str, default='sample', 
+                        choices=['full', 'sample'])
+    parser.add_argument('--text_mode', type=str, default='all')
+    parser.add_argument('--occ_num', type=int, default=0)
+    parser.add_argument('--batch_size_train', type=int, default=16)
+    parser.add_argument('--batch_size_test', type=int, default=16)
+    parser.add_argument('--epoch_num', type=int, default=1)
+    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--model', type=str, default='MZSGO')
+    parser.add_argument('--nlp_model_type', type=str, default='qwen_4b')
+    parser.add_argument('--esm_type', type=str, default='esm2_t33_650M_UR50D')
+    parser.add_argument('--hidden_dim', type=int, default=512)
+    parser.add_argument('--embed_dim', type=int, default=1280)
+    parser.add_argument('--dropout', type=float, default=0.5)
+    
+    return parser.parse_args()
 
-    config = get_config(run_mode="sample", text_mode="all",occ_num=0,batch_size_train=64,
-    batch_size_test=64,nlp_model_type="qwen_4b",epoch_num=1,model='domain_text_gated')
+def main():
+    args = parse_args()
+    seed = setup_environment()
+    config = get_config(
+        run_mode=args.run_mode,
+        text_mode=args.text_mode,
+        occ_num=args.occ_num,
+        batch_size_train=args.batch_size_train,
+        batch_size_test=args.batch_size_test,
+        nlp_model_type=args.nlp_model_type,
+        epoch_num=args.epoch_num,
+        model=args.model,
+        hidden_dim=args.hidden_dim,
+        learning_rate=args.learning_rate,
+        dropout=args.dropout,
+        esm_type=args.esm_type,
+        embed_dim=args.embed_dim
+    )
 
     ctime = datetime.now().strftime("%Y%m%d%H%M%S")
     print('Start running date:{}'.format(ctime))
     
-    nlp_tokenizer, nlp_model = load_nlp_model(config['nlp_path'])
+    # nlp_tokenizer, nlp_model = load_nlp_model_path(config['nlp_path'])
+    nlp_tokenizer, nlp_model = load_nlp_model_name(config['nlp_name'])
     
     label_space = {
         'biological_process': [],
@@ -34,7 +67,7 @@ def main():
     }
     enc = preprocessing.LabelEncoder()
     
-    onto, ia_dict = obo_graph(config['obo_path'], config['ia_path'])
+    onto, ia_dict = obo_graph(config['obo_path'],config['ia_path'])
     
     train_id, training_sequences, training_labels, test_id, test_sequences, test_labels = load_datasets(
         config, onto, label_space)
@@ -42,14 +75,14 @@ def main():
     train_esm_embeddings, test_esm_embeddings = compute_esm_embeddings(
         config, training_sequences, test_sequences)
     
-    train_domain_features, test_domain_features = load_text_pretrained_domain_features(train_id, test_id,config['domain_text_path'])
+    train_domain_features, test_domain_features = load_text_pretrained_domain_features(train_id, test_id,config)
     metrics_output_test = {}
 
     for key in label_space.keys():
         print(f"\n{'='*80}")
         print(f"Processing ontology: {key}")
 
-        label_list, training_labels_binary, test_labels_binary, enc, ia_list, onto_parent, label_num = process_labels_for_ontology(
+        label_list, training_labels_binary, test_labels_binary, enc, ia_list,onto_parent, label_num = process_labels_for_ontology(
             config, key, label_space, training_labels, test_labels, onto, enc, ia_dict)
         
         filtered_data = filter_samples_with_labels(

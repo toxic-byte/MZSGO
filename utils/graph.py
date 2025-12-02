@@ -212,7 +212,6 @@ def check_label_propagation(labels_binary, adj_matrix, label_list, ontology_name
         min_ancestors = min(ancestor_counts)
        
         root_nodes = [i for i, anc in all_ancestors.items() if len(anc) == 0]
-        if len(root_nodes) <= 10:
 
     violation_count = 0
     sample_violation_count = {}

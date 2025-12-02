@@ -9,7 +9,7 @@ from tqdm import tqdm
 import numpy as np
 
 # Parse the OBO file and creates a different graph for each namespace
-def obo_graph(filepath, dict_path):
+def obo_graph(filepath, dict_path=None):
     ia_dict = None
     if dict_path is not None:
         ia_dict = ia_parser(dict_path)
@@ -310,7 +310,7 @@ def create_ontology_adjacency_matrix(onto_parent, label_num, key,config):
     
     return sparse_adj_matrix
 
-def create_dataloaders(config, training_sequences, training_labels_binary, train_esm_embeddings
+def create_dataloaders(config, training_sequences, training_labels_binary, train_esm_embeddings,
                        test_sequences, test_labels_binary, test_esm_embeddings,train_domain_features, test_domain_features):
     training_dataset = IndexedStabilitylandscapeDataset(
         training_sequences, 

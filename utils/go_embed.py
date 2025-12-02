@@ -8,9 +8,16 @@ import re
 
 MAXLEN = 2048
 
-def load_nlp_model(nlp_path):
+def load_nlp_model_path(nlp_path):
     nlp_tokenizer = AutoTokenizer.from_pretrained(nlp_path)
     nlp_model = AutoModel.from_pretrained(nlp_path)
+    nlp_model.cuda()
+    nlp_model.eval()
+    return nlp_tokenizer, nlp_model
+
+def load_nlp_model_name(model_name):
+    nlp_tokenizer = AutoTokenizer.from_pretrained(model_name)
+    nlp_model = AutoModel.from_pretrained(model_name)
     nlp_model.cuda()
     nlp_model.eval()
     return nlp_tokenizer, nlp_model
