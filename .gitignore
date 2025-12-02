@@ -1,2 +1,4 @@
 **/log*/
-**/embedding_cache*/
+**/embeddings_cache*/
+**/ckpt*/
+**/eval*/
