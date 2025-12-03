@@ -176,11 +176,6 @@ def save_test_results(config, all_results, output_dir='./test_results'):
     output_file = os.path.join(output_dir, f"{config['model']}_{ctime}.txt")
     
     with open(output_file, 'w') as f:
-        f.write(f"Test completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"Model: CustomModel (Binary Classification with Pre-trained Inter Embedding)\n")
-        f.write(f"Analysis Type: Zero-shot GO term prediction (unseen labels)\n")
-        
-        f.write(f"\n{'='*80}\n")
         f.write(f"OVERALL TEST RESULTS\n")
         f.write(f"{'='*80}\n")
         

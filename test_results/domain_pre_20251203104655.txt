@@ -1,0 +1,157 @@
+Test completed at: 2025-12-03 10:46:55
+Model: CustomModel (Binary Classification with Pre-trained Inter Embedding)
+Analysis Type: Zero-shot GO term prediction (unseen labels)
+
+================================================================================
+OVERALL TEST RESULTS
+================================================================================
+
+molecular_function:
+  Model path:        /d/cuiby/paper/cut_0/ckpt/cafa5/domain_text_ddp/20251127160823domain_text_ddp_molecular_function_best.pt
+  Avg Precision:     0.7500
+  Avg Recall:        0.7296
+  Avg Fmax:          0.7397
+  AUPR:              0.7127
+  Threshold:         0.3700
+  Prop-Fmax:         0.7398 ★
+  Prop-Precision:    0.7385
+  Prop-Recall:       0.7412
+  Prop-AUPR:         0.7142
+  Prop-Threshold:    0.3500
+  Harmonic Mean (H): 0.7005 ★★
+
+biological_process:
+  Model path:        /d/cuiby/paper/cut_0/ckpt/cafa5/domain_text_gated/20251122214650domain_text_gated_biological_process_best.pt
+  Avg Precision:     0.5706
+  Avg Recall:        0.4429
+  Avg Fmax:          0.4987
+  AUPR:              0.4837
+  Threshold:         0.3300
+  Prop-Fmax:         0.5080 ★
+  Prop-Precision:    0.5692
+  Prop-Recall:       0.4587
+  Prop-AUPR:         0.4911
+  Prop-Threshold:    0.3300
+  Harmonic Mean (H): 0.4540 ★★
+
+cellular_component:
+  Model path:        /d/cuiby/paper/cut_0/ckpt/cafa5/domain_text_gated/20251122214650domain_text_gated_cellular_component_best.pt
+  Avg Precision:     0.7945
+  Avg Recall:        0.7114
+  Avg Fmax:          0.7507
+  AUPR:              0.7234
+  Threshold:         0.4500
+  Prop-Fmax:         0.7513 ★
+  Prop-Precision:    0.7902
+  Prop-Recall:       0.7160
+  Prop-AUPR:         0.7235
+  Prop-Threshold:    0.4500
+  Harmonic Mean (H): 0.7201 ★★
+
+================================================================================
+UNSEEN LABELS PERFORMANCE (Zero-shot)
+================================================================================
+
+molecular_function:
+  Label count:       71
+  Sample count:      71
+  Avg Precision:     0.6979
+  Avg Recall:        0.6537
+  Avg Fmax:          0.6751 ★
+  AUPR:              0.6600
+  Threshold:         0.0200
+  Prop-Fmax:         0.6751
+  Prop-Precision:    0.6979
+  Prop-Recall:       0.6537
+  Prop-AUPR:         0.6612
+  Prop-Threshold:    0.0200
+
+biological_process:
+  Label count:       309
+  Sample count:      316
+  Avg Precision:     0.4254
+  Avg Recall:        0.4047
+  Avg Fmax:          0.4148 ★
+  AUPR:              0.3971
+  Threshold:         0.0100
+  Prop-Fmax:         0.4128
+  Prop-Precision:    0.4205
+  Prop-Recall:       0.4054
+  Prop-AUPR:         0.3988
+  Prop-Threshold:    0.0100
+
+cellular_component:
+  Label count:       19
+  Sample count:      20
+  Avg Precision:     0.8750
+  Avg Recall:        0.5000
+  Avg Fmax:          0.6364 ★
+  AUPR:              0.6946
+  Threshold:         0.0100
+  Prop-Fmax:         0.6567
+  Prop-Precision:    0.8542
+  Prop-Recall:       0.5333
+  Prop-AUPR:         0.7060
+  Prop-Threshold:    0.0100
+
+================================================================================
+SEEN LABELS PERFORMANCE
+================================================================================
+
+molecular_function:
+  Label count:       249
+  Sample count:      901
+  Avg Precision:     0.7650
+  Avg Recall:        0.7706
+  Avg Fmax:          0.7678 ★
+  AUPR:              0.7431
+  Threshold:         0.3500
+  Prop-Fmax:         0.7700
+  Prop-Precision:    0.7631
+  Prop-Recall:       0.7771
+  Prop-AUPR:         0.7448
+  Prop-Threshold:    0.3500
+
+biological_process:
+  Label count:       1373
+  Sample count:      4286
+  Avg Precision:     0.5010
+  Avg Recall:        0.5432
+  Avg Fmax:          0.5213 ★
+  AUPR:              0.5197
+  Threshold:         0.2300
+  Prop-Fmax:         0.5283
+  Prop-Precision:    0.4988
+  Prop-Recall:       0.5614
+  Prop-AUPR:         0.5270
+  Prop-Threshold:    0.2300
+
+cellular_component:
+  Label count:       249
+  Sample count:      1551
+  Avg Precision:     0.7824
+  Avg Recall:        0.7375
+  Avg Fmax:          0.7593 ★
+  AUPR:              0.7342
+  Threshold:         0.4100
+  Prop-Fmax:         0.7599
+  Prop-Precision:    0.7975
+  Prop-Recall:       0.7257
+  Prop-AUPR:         0.7348
+  Prop-Threshold:    0.4500
+
+================================================================================
+HARMONIC MEAN (H)
+================================================================================
+
+molecular_function:
+  H = 2 × (Prop-Fmax_unseen × Prop-Fmax_seen) / (Prop-Fmax_unseen + Prop-Fmax_seen)
+  H = 0.7005 ★★
+
+biological_process:
+  H = 2 × (Prop-Fmax_unseen × Prop-Fmax_seen) / (Prop-Fmax_unseen + Prop-Fmax_seen)
+  H = 0.4540 ★★
+
+cellular_component:
+  H = 2 × (Prop-Fmax_unseen × Prop-Fmax_seen) / (Prop-Fmax_unseen + Prop-Fmax_seen)
+  H = 0.7201 ★★

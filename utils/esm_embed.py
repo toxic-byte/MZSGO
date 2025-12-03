@@ -68,7 +68,7 @@ def compute_esm_embeddings(config, training_sequences, test_sequences):
         train_esm_cache = os.path.join(config['cache_dir'], f"esm/{config['esm_type']}/train_esm_embeddings_mean.pkl")
         test_esm_cache = os.path.join(config['cache_dir'], f"esm/{config['esm_type']}/test_esm_embeddings_mean.pkl")
     elif config['run_mode'] == "zero":
-        train_esm_cache = None
+        train_esm_cache = os.path.join(config['cache_dir'], f"esm/{config['esm_type']}/train_esm_embeddings_mean.pkl")
         test_esm_cache = os.path.join(config['cache_dir'], f"esm/{config['esm_type']}/test_esm_embeddings_zero.pkl")
     train_esm_embeddings = precompute_esm_embeddings(training_sequences, train_esm_cache, pooling='mean')
     test_esm_embeddings = precompute_esm_embeddings(test_sequences, test_esm_cache, pooling='mean')

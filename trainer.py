@@ -274,7 +274,6 @@ def train_model_for_ontology(config, key, train_dataloader, test_dataloader,
     
     print(f"\n{'='*80}")
     print(f"Training {key}")
-    print(f"{'='*80}\n")
     
     for epoch in range(max_epochs):
         train_loss = train_one_epoch_efficient(
@@ -285,7 +284,6 @@ def train_model_for_ontology(config, key, train_dataloader, test_dataloader,
     print(f"\n{'='*80}")
     print(f"Training completed for {key}!")
     print(f"Starting final evaluation with unseen label analysis...")
-    print(f"{'='*80}\n")
     
     metrics = evaluate_model_with_unseen(
         model, test_dataloader, list_embedding, ia_list, key, 
@@ -307,19 +305,11 @@ def train_model_for_ontology(config, key, train_dataloader, test_dataloader,
     ckpt_path = os.path.join(ckpt_dir, f"{ctime}MZSGO_{key}_final.pt")
     
     torch.save({
-        'epoch': max_epochs,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'metrics': metrics_output_test[key],
-        'config': config,
-        'unseen_indices': unseen_indices,
-        'seen_indices': seen_indices
+        'model_state_dict': model.state_dict()
     }, ckpt_path)
     
     print(f"\n{'='*80}")
     print(f"Model saved:")
-    print(f"  Path: {ckpt_path}")
-    print(f"  Total epochs: {max_epochs}")
     print(f"  Overall Prop-Fmax: {metrics['prop_Fmax']:.4f}")
     print(f"  Overall Avg Fmax: {metrics['Fmax']:.4f}")
     if metrics['harmonic_mean'] is not None:

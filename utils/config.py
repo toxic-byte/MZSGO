@@ -16,7 +16,7 @@ def setup_environment():
 
 def get_config(run_mode="full", text_mode="all", nlp_model_type="qwen_4b", occ_num=0,
 batch_size_train=128, batch_size_test=128, learning_rate=5e-4, epoch_num=100, patience=10,
-hidden_dim=512, model="domain_pre", dropout=0.3, esm_type="esm2_t33_650M_UR50D",
+hidden_dim=512, model="MZSGO", dropout=0.3, esm_type="esm2_t33_650M_UR50D",
 embed_dim=1280, nlp_dim=2560, loss='bce'):
     config = {
         'run_mode': run_mode,
@@ -51,6 +51,7 @@ embed_dim=1280, nlp_dim=2560, loss='bce'):
         config['train_path'] = "./data/sequence/cafa5_train_in_swissprot.txt"
         config['test_path'] = "./data/sequence/cafa5_test_in_swissprot.txt"
     elif run_mode == "zero":
+        config['train_path'] = "./data/sequence/cafa5_train_in_swissprot.txt"
         config['test_path'] = "./data/sequence/zero_shot_below30.txt"
         config['obo_path'] = "./data/go_2025_10_10.obo"
 
