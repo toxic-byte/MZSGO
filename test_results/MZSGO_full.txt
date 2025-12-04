@@ -1,0 +1,149 @@
+OVERALL TEST RESULTS
+================================================================================
+
+molecular_function:
+  Model path:        ./ckpt/cafa5/MZSGO/molecular_function.pt
+  Avg Precision:     0.7997
+  Avg Recall:        0.7261
+  Avg Fmax:          0.7611
+ ★  AUPR:              0.7337
+  Threshold:         0.4600
+  Prop-Fmax:         0.7628
+  Prop-Precision:    0.8069
+  Prop-Recall:       0.7233
+  Prop-AUPR:         0.7356
+  Prop-Threshold:    0.4900
+  Harmonic Mean (H): 0.5821 ★★
+
+biological_process:
+  Model path:        ./ckpt/cafa5/MZSGO/biological_process.pt
+  Avg Precision:     0.5428
+  Avg Recall:        0.4712
+  Avg Fmax:          0.5045
+ ★  AUPR:              0.5008
+  Threshold:         0.2900
+  Prop-Fmax:         0.5066
+  Prop-Precision:    0.5346
+  Prop-Recall:       0.4813
+  Prop-AUPR:         0.5046
+  Prop-Threshold:    0.2900
+  Harmonic Mean (H): 0.3241 ★★
+
+cellular_component:
+  Model path:        ./ckpt/cafa5/MZSGO/cellular_component.pt
+  Avg Precision:     0.7901
+  Avg Recall:        0.7083
+  Avg Fmax:          0.7470
+ ★  AUPR:              0.7726
+  Threshold:         0.4900
+  Prop-Fmax:         0.7482
+  Prop-Precision:    0.7859
+  Prop-Recall:       0.7140
+  Prop-AUPR:         0.7736
+  Prop-Threshold:    0.4900
+  Harmonic Mean (H): 0.6669 ★★
+
+================================================================================
+UNSEEN LABELS PERFORMANCE (Zero-shot)
+================================================================================
+
+molecular_function:
+  Label count:       191
+  Sample count:      204
+  Avg Precision:     0.6655
+  Avg Recall:        0.3132
+  Avg Fmax:          0.4259 ★
+  AUPR:              0.4806
+  Threshold:         0.0100
+  Prop-Fmax:         0.4259
+  Prop-Precision:    0.6655
+  Prop-Recall:       0.3132
+  Prop-AUPR:         0.4806
+  Prop-Threshold:    0.0100
+
+biological_process:
+  Label count:       328
+  Sample count:      343
+  Avg Precision:     0.4210
+  Avg Recall:        0.0706
+  Avg Fmax:          0.1210 ★
+  AUPR:              0.2393
+  Threshold:         0.0100
+  Prop-Fmax:         0.1246
+  Prop-Precision:    0.4177
+  Prop-Recall:       0.0732
+  Prop-AUPR:         0.2394
+  Prop-Threshold:    0.0100
+
+cellular_component:
+  Label count:       26
+  Sample count:      29
+  Avg Precision:     0.4740
+  Avg Recall:        0.7037
+  Avg Fmax:          0.5665 ★
+  AUPR:              0.5862
+  Threshold:         0.0200
+  Prop-Fmax:         0.5665
+  Prop-Precision:    0.4740
+  Prop-Recall:       0.7037
+  Prop-AUPR:         0.5862
+  Prop-Threshold:    0.0200
+
+================================================================================
+SEEN LABELS PERFORMANCE
+================================================================================
+
+molecular_function:
+  Label count:       2983
+  Sample count:      51158
+  Avg Precision:     0.8009
+  Avg Recall:        0.7285
+  Avg Fmax:          0.7630 ★
+  AUPR:              0.7380
+  Threshold:         0.4600
+  Prop-Fmax:         0.7646
+  Prop-Precision:    0.8082
+  Prop-Recall:       0.7256
+  Prop-AUPR:         0.7399
+  Prop-Threshold:    0.4900
+
+biological_process:
+  Label count:       11691
+  Sample count:      238104
+  Avg Precision:     0.5429
+  Avg Recall:        0.4716
+  Avg Fmax:          0.5048 ★
+  AUPR:              0.5021
+  Threshold:         0.2900
+  Prop-Fmax:         0.5068
+  Prop-Precision:    0.5347
+  Prop-Recall:       0.4817
+  Prop-AUPR:         0.5060
+  Prop-Threshold:    0.2900
+
+cellular_component:
+  Label count:       1581
+  Sample count:      78628
+  Avg Precision:     0.7901
+  Avg Recall:        0.7084
+  Avg Fmax:          0.7470 ★
+  AUPR:              0.7733
+  Threshold:         0.4900
+  Prop-Fmax:         0.7483
+  Prop-Precision:    0.7860
+  Prop-Recall:       0.7141
+  Prop-AUPR:         0.7743
+  Prop-Threshold:    0.4900
+
+================================================================================
+HARMONIC MEAN (H)
+================================================================================
+
+molecular_function:
+  H = 0.5821 ★★
+
+biological_process:
+  H = 0.3241 ★★
+
+cellular_component:
+  H = 0.6669 ★★

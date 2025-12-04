@@ -3,6 +3,18 @@ import torch
 import torch.nn.functional as F
 import os 
 import math
+ONTO_NAME_MAP = {
+    'bp': 'biological_process',
+    'mf': 'molecular_function',
+    'cc': 'cellular_component'
+}
+
+def get_ontologies_to_train(onto_arg):
+    if onto_arg == 'all':
+        return ['biological_process', 'molecular_function', 'cellular_component']
+    else:
+        return [ONTO_NAME_MAP[onto_arg]]
+
 
 def filter_samples_with_labels(training_labels_binary, test_labels_binary, 
                                training_sequences, test_sequences,
@@ -286,17 +298,13 @@ def save_results(config, metrics_output_test, seed, ctime):
         
         if metrics['unseen'] is not None:
             print(f"  Unseen ({metrics['unseen_count']} labels):")
-            print(f"    Avg Fmax:      {metrics['unseen']['Fmax']:.4f} ★")
-            if 'prop_Fmax' in metrics['unseen']:
-                print(f"    Prop-Fmax:     {metrics['unseen']['prop_Fmax']:.4f}")
-            print(f"    Prop-AUPR:     {metrics['unseen']['prop_aupr']:.4f}")
+            print(f"    Fmax:      {metrics['unseen']['Fmax']:.4f} ★")
+            print(f"    AUPR:      {metrics['unseen']['aupr']:.4f}")
         
         if metrics['seen'] is not None:
             print(f"  Seen ({metrics['seen_count']} labels):")
-            print(f"    Avg Fmax:      {metrics['seen']['Fmax']:.4f} ★")
-            if 'prop_Fmax' in metrics['seen']:
-                print(f"    Prop-Fmax:     {metrics['seen']['prop_Fmax']:.4f} ")
-            print(f"    Prop-AUPR:     {metrics['seen']['prop_aupr']:.4f}")
+            print(f"    Fmax:      {metrics['seen']['Fmax']:.4f} ★")
+            print(f"    AUPR:      {metrics['seen']['aupr']:.4f}")
         
         if metrics['harmonic_mean'] is not None:
             print(f"  Harmonic Mean:   {metrics['harmonic_mean']:.4f} ★★")

@@ -13,27 +13,30 @@ from go_embed import load_nlp_model_name,load_nlp_model_path,compute_nlp_embeddi
 from esm_embed import compute_esm_embeddings
 from domain_embed import load_text_pretrained_domain_features
 from trainer import train_model_for_ontology
-from util import filter_samples_with_labels,save_results
+from util import filter_samples_with_labels,save_results,get_ontologies_to_train
 
 def parse_args():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--run_mode', type=str, default='sample', 
+    parser.add_argument('--run_mode', type=str, default='full', 
                         choices=['full', 'sample'])
     parser.add_argument('--text_mode', type=str, default='all')
     parser.add_argument('--occ_num', type=int, default=0)
     parser.add_argument('--batch_size_train', type=int, default=16)
     parser.add_argument('--batch_size_test', type=int, default=16)
-    parser.add_argument('--epoch_num', type=int, default=1)
-    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--epoch_num', type=int, default=20)
+    parser.add_argument('--learning_rate', type=float, default=5e-4)
     parser.add_argument('--model', type=str, default='MZSGO')
     parser.add_argument('--nlp_model_type', type=str, default='qwen_4b')
     parser.add_argument('--esm_type', type=str, default='esm2_t33_650M_UR50D')
     parser.add_argument('--hidden_dim', type=int, default=512)
     parser.add_argument('--embed_dim', type=int, default=1280)
     parser.add_argument('--dropout', type=float, default=0.5)
+    parser.add_argument('--loss', type=str, default="bce")
+    parser.add_argument('--onto', type=str, default="all", choices=['all', 'bp', 'mf', 'cc'])
     
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -51,11 +54,15 @@ def main():
         learning_rate=args.learning_rate,
         dropout=args.dropout,
         esm_type=args.esm_type,
-        embed_dim=args.embed_dim
+        embed_dim=args.embed_dim,
+        loss=args.loss
     )
 
     ctime = datetime.now().strftime("%Y%m%d%H%M%S")
     print('Start running date:{}'.format(ctime))
+    
+    ontologies_to_train = get_ontologies_to_train(args.onto)
+    print(f"Ontologies to train: {ontologies_to_train}")
     
     # nlp_tokenizer, nlp_model = load_nlp_model_path(config['nlp_path'])
     nlp_tokenizer, nlp_model = load_nlp_model_name(config['nlp_name'])
@@ -78,7 +85,7 @@ def main():
     train_domain_features, test_domain_features = load_text_pretrained_domain_features(train_id, test_id,config)
     metrics_output_test = {}
 
-    for key in label_space.keys():
+    for key in ontologies_to_train:
         print(f"\n{'='*80}")
         print(f"Processing ontology: {key}")
 

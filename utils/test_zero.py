@@ -127,17 +127,17 @@ def evaluate_unseen_labels(all_labels, all_preds, unseen_indices, seen_indices, 
     
     return metrics
 
-def compute_harmonic_mean(unseen_fmax, seen_fmax):
-    if unseen_fmax is None or seen_fmax is None:
+def compute_harmonic_mean(unseen_aupr, seen_aupr):
+    if unseen_aupr is None or seen_aupr is None:
         return None
     
-    if unseen_fmax == 0 and seen_fmax == 0:
+    if unseen_aupr == 0 and seen_aupr == 0:
         return 0.0
     
-    if unseen_fmax == 0 or seen_fmax == 0:
+    if unseen_aupr == 0 or seen_aupr == 0:
         return 0.0
     
-    harmonic_mean = (2 * unseen_fmax * seen_fmax) / (unseen_fmax + seen_fmax)
+    harmonic_mean = (2 * unseen_aupr * seen_aupr) / (unseen_aupr + seen_aupr)
     return harmonic_mean
 
 def print_unseen_label_analysis(key, unseen_indices, seen_indices, train_counts, test_counts, label_list):
@@ -173,7 +173,7 @@ def print_unseen_label_analysis(key, unseen_indices, seen_indices, train_counts,
 def save_test_results(config, all_results, output_dir='./test_results'):
     os.makedirs(output_dir, exist_ok=True)
     ctime = datetime.now().strftime("%Y%m%d%H%M%S")
-    output_file = os.path.join(output_dir, f"{config['model']}_{ctime}.txt")
+    output_file = os.path.join(output_dir, f"{config['model']}_{config['run_mode']}_{ctime}.txt")
     
     with open(output_file, 'w') as f:
         f.write(f"OVERALL TEST RESULTS\n")
@@ -187,10 +187,10 @@ def save_test_results(config, all_results, output_dir='./test_results'):
             f.write(f"  Model path:        {checkpoint_path}\n")
             f.write(f"  Avg Precision:     {metrics['p']:.4f}\n")
             f.write(f"  Avg Recall:        {metrics['r']:.4f}\n")
-            f.write(f"  Avg Fmax:          {metrics['Fmax']:.4f}\n")
+            f.write(f"  Avg Fmax:          {metrics['Fmax']:.4f}\n ★")
             f.write(f"  AUPR:              {metrics['aupr']:.4f}\n")
             f.write(f"  Threshold:         {metrics['threshold']:.4f}\n")
-            f.write(f"  Prop-Fmax:         {metrics['prop_Fmax']:.4f} ★\n")
+            f.write(f"  Prop-Fmax:         {metrics['prop_Fmax']:.4f}\n")
             f.write(f"  Prop-Precision:    {metrics['prop_precision']:.4f}\n")
             f.write(f"  Prop-Recall:       {metrics['prop_recall']:.4f}\n")
             f.write(f"  Prop-AUPR:         {metrics['prop_aupr']:.4f}\n")
@@ -258,7 +258,6 @@ def save_test_results(config, all_results, output_dir='./test_results'):
             metrics = result['metrics']
             f.write(f"\n{key}:\n")
             if metrics['harmonic_mean'] is not None:
-                f.write(f"  H = 2 × (Prop-Fmax_unseen × Prop-Fmax_seen) / (Prop-Fmax_unseen + Prop-Fmax_seen)\n")
                 f.write(f"  H = {metrics['harmonic_mean']:.4f} ★★\n")
             else:
                 f.write(f"  Cannot compute harmonic mean (missing unseen or seen labels)\n")

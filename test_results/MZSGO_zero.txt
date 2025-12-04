@@ -1,45 +1,40 @@
-Test completed at: 2025-12-03 12:16:41
-Model: CustomModel (Binary Classification with Pre-trained Inter Embedding)
-Analysis Type: Zero-shot GO term prediction (unseen labels)
-
-================================================================================
 OVERALL TEST RESULTS
 ================================================================================
 
 molecular_function:
-  Model path:        ./ckpt/cafa5/MZSGO/MZSGO_molecular_function_best.pt
+  Model path:        ./ckpt/cafa5/MZSGO/molecular_function.pt
   Avg Precision:     0.0238
   Avg Recall:        0.4709
   Avg Fmax:          0.0454
-  AUPR:              0.0159
+ ★  AUPR:              0.0159
   Threshold:         0.0200
-  Prop-Fmax:         0.0727 ★
+  Prop-Fmax:         0.0727
   Prop-Precision:    0.0400
   Prop-Recall:       0.3961
   Prop-AUPR:         0.0258
   Prop-Threshold:    0.1100
 
 biological_process:
-  Model path:        ./ckpt/cafa5/MZSGO/MZSGO_biological_process_best.pt
+  Model path:        ./ckpt/cafa5/MZSGO/biological_process.pt
   Avg Precision:     0.0177
   Avg Recall:        0.2956
   Avg Fmax:          0.0333
-  AUPR:              0.0090
+ ★  AUPR:              0.0090
   Threshold:         0.1300
-  Prop-Fmax:         0.0612 ★
+  Prop-Fmax:         0.0612
   Prop-Precision:    0.0321
   Prop-Recall:       0.6643
   Prop-AUPR:         0.0187
   Prop-Threshold:    0.1800
 
 cellular_component:
-  Model path:        ./ckpt/cafa5/MZSGO/MZSGO_cellular_component_best.pt
+  Model path:        ./ckpt/cafa5/MZSGO/cellular_component.pt
   Avg Precision:     0.0101
   Avg Recall:        0.2941
   Avg Fmax:          0.0194
-  AUPR:              0.0045
+ ★  AUPR:              0.0045
   Threshold:         0.2300
-  Prop-Fmax:         0.0190 ★
+  Prop-Fmax:         0.0190
   Prop-Precision:    0.0098
   Prop-Recall:       0.2941
   Prop-AUPR:         0.0046

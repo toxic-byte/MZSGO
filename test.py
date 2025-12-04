@@ -25,12 +25,11 @@ def parse_args():
                         choices=['full','sample','zero'])
     parser.add_argument('--text_mode', type=str, default='all')
     parser.add_argument('--occ_num', type=int, default=0)
-    parser.add_argument('--batch_size_train', type=int, default=32)
-    parser.add_argument('--batch_size_test', type=int, default=32)
-    parser.add_argument('--epoch_num', type=int, default=50)
+    parser.add_argument('--batch_size_train', type=int, default=16)
+    parser.add_argument('--batch_size_test', type=int, default=16)
     parser.add_argument('--nlp_model_type', type=str, default='qwen_4b')
     parser.add_argument('--hidden_dim', type=int, default=512)
-    parser.add_argument('--dropout', type=float, default=0.3)
+    parser.add_argument('--dropout', type=float, default=0.5)
     
     parser.add_argument('--bp_model_path', type=str, 
                         default='./ckpt/cafa5/MZSGO/biological_process.pt',
@@ -50,13 +49,12 @@ def load_trained_model(checkpoint_path, config, train_domain_features):
     model = CustomModel(
         esm_dim=config['embed_dim'],
         nlp_dim=config['nlp_dim'],
-        inter_size=train_domain_features.shape[1],
+        domain_size=train_domain_features.shape[1],
         hidden_dim=config.get('hidden_dim', 512),
-        dropout=config.get('dropout', 0.3)
     ).cuda()
     
     checkpoint = torch.load(checkpoint_path, weights_only=False)
-    model.load_state_dict(checkpoint['model_state_dict'])    
+    model.load_state_dict(checkpoint)    
     return model, checkpoint
 
 def main_test():
@@ -69,9 +67,7 @@ def main_test():
         batch_size_train=args.batch_size_train, 
         batch_size_test=args.batch_size_test,
         nlp_model_type=args.nlp_model_type, 
-        epoch_num=args.epoch_num,
-        hidden_dim=args.hidden_dim,
-        dropout=args.dropout
+        hidden_dim=args.hidden_dim
     )
     
     print('='*80)
@@ -159,19 +155,19 @@ def main_test():
         
         if metrics['unseen'] is not None:
             print(f"  Unseen Labels ({result['unseen_count']} labels):")
-            print(f"    Avg Fmax:      {metrics['unseen']['Fmax']:.4f} ★")
+            print(f"    Avg Fmax:      {metrics['unseen']['Fmax']:.4f}")
             if 'prop_Fmax' in metrics['unseen']:
                 print(f"    Prop-Fmax:     {metrics['unseen']['prop_Fmax']:.4f}")
-            print(f"    AUPR:          {metrics['unseen']['aupr']:.4f}")
+            print(f"    AUPR:          {metrics['unseen']['aupr']:.4f} ★")
             if 'prop_aupr' in metrics['unseen']:
                 print(f"    Prop-AUPR:     {metrics['unseen']['prop_aupr']:.4f}")
         
         if metrics['seen'] is not None:
             print(f"  Seen Labels ({result['seen_count']} labels):")
-            print(f"    Avg Fmax:      {metrics['seen']['Fmax']:.4f} ★")
+            print(f"    Avg Fmax:      {metrics['seen']['Fmax']:.4f}")
             if 'prop_Fmax' in metrics['seen']:
                 print(f"    Prop-Fmax:     {metrics['seen']['prop_Fmax']:.4f}")
-            print(f"    AUPR:          {metrics['seen']['aupr']:.4f}")
+            print(f"    AUPR:          {metrics['seen']['aupr']:.4f} ★")
             if 'prop_aupr' in metrics['seen']:
                 print(f"    Prop-AUPR:     {metrics['seen']['prop_aupr']:.4f}")
         

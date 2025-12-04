@@ -14,14 +14,18 @@ def create_model_and_optimizer(config, train_domain_features, pos_weight=None, t
     model = CustomModel(
         esm_dim=config['embed_dim'],
         nlp_dim=config['nlp_dim'],
-        inter_size=train_domain_features.shape[1],
+        domain_size=train_domain_features.shape[1],
         hidden_dim=config.get('hidden_dim', 512),
-        dropout=config.get('dropout', 0.3)
+        dropout=config.get('dropout', 0.5)
     ).cuda()
     
-    criterion = nn.BCEWithLogitsLoss()
-    # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-    # criterion = FocalLoss(gamma=2,alpha=0.25)
+    if config['loss']=='focal':
+        criterion = FocalLoss()
+    elif  config['loss']=='bce_weight':
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    elif config['loss']=='bce':
+        criterion = nn.BCEWithLogitsLoss()  
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
     
     if total_steps is None:
@@ -215,18 +219,16 @@ def evaluate_model_with_unseen(model, test_dataloader, list_embedding, ia_list, 
     harmonic_mean = None
     if (label_specific_metrics['unseen'] is not None and 
         label_specific_metrics['seen'] is not None and
-        'prop_aupr' in label_specific_metrics['unseen'] and
-        'prop_aupr' in label_specific_metrics['seen']):
+        'aupr' in label_specific_metrics['unseen'] and
+        'aupr' in label_specific_metrics['seen']):
         
         harmonic_mean = compute_harmonic_mean(
-            label_specific_metrics['unseen']['prop_aupr'],
-            label_specific_metrics['seen']['prop_aupr']
+            label_specific_metrics['unseen']['aupr'],
+            label_specific_metrics['seen']['aupr']
         )
         
         print(f"\n{'='*80}")
         print(f"Harmonic Mean (H):")
-        print(f"{'='*80}")
-        print(f"  H = 2 × ({label_specific_metrics['unseen']['prop_aupr']:.4f} × {label_specific_metrics['seen']['prop_aupr']:.4f}) / ({label_specific_metrics['unseen']['prop_aupr']:.4f} + {label_specific_metrics['seen']['prop_aupr']:.4f})")
         print(f"  H = {100 * harmonic_mean:.2f}% ★★")
     
     print(f"{'='*80}\n")
@@ -304,20 +306,12 @@ def train_model_for_ontology(config, key, train_dataloader, test_dataloader,
     os.makedirs(ckpt_dir, exist_ok=True)
     ckpt_path = os.path.join(ckpt_dir, f"{ctime}MZSGO_{key}_final.pt")
     
-    torch.save({
-        'model_state_dict': model.state_dict()
-    }, ckpt_path)
-    
+    torch.save(model.state_dict(), ckpt_path)
+
     print(f"\n{'='*80}")
     print(f"Model saved:")
-    print(f"  Overall Prop-Fmax: {metrics['prop_Fmax']:.4f}")
     print(f"  Overall Avg Fmax: {metrics['Fmax']:.4f}")
     if metrics['harmonic_mean'] is not None:
         print(f"  Harmonic Mean: {metrics['harmonic_mean']:.4f} ★★")
-    if metrics['unseen'] is not None and 'prop_Fmax' in metrics['unseen']:
-        print(f"  Unseen Prop-Fmax: {metrics['unseen']['prop_Fmax']:.4f}")
-    if metrics['seen'] is not None and 'prop_Fmax' in metrics['seen']:
-        print(f"  Seen Prop-Fmax: {metrics['seen']['prop_Fmax']:.4f}")
-    print(f"{'='*80}\n")
     
     return model

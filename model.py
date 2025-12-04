@@ -82,7 +82,7 @@ class FeatureDropout(nn.Module):
 
 
 class CustomModel(nn.Module):
-    def __init__(self, esm_dim, nlp_dim, inter_size, hidden_dim=512, dropout=0.3,
+    def __init__(self, esm_dim, nlp_dim, domain_size, hidden_dim=512, dropout=0.3,
                  feature_dropout_prob=0.15):
         super(CustomModel, self).__init__()
         
@@ -101,7 +101,7 @@ class CustomModel(nn.Module):
         )
         
         self.domain_proj = nn.Sequential(
-            nn.Linear(inter_size, hidden_dim),
+            nn.Linear(domain_size, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout * 0.5)
