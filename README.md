@@ -2,6 +2,8 @@
 
 Official implementation of **MZSGO** - a multimodal zero-shot framework for predicting protein Gene Ontology (GO) terms using ESM-2 embeddings, large language models, and domain features.
 
+<div align=center><img width="800" alt="overview" src="https://github.com/toxic-byte/MZSGO/blob/main/images/overview.jpg"></div>
+
 ## Installation
 
 ```bash
