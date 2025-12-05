@@ -1,10 +1,24 @@
 # MZSGO: A Multimodal Zero-Shot Framework for Protein Function Prediction
 
-Official implementation of **MZSGO** - a multimodal zero-shot framework for predicting protein Gene Ontology (GO) terms using ESM-2 embeddings, large language models, and domain features.
+<div align="center">
+  <img width="800" alt="MZSGO Framework Overview" src="https://github.com/toxic-byte/MZSGO/blob/main/images/overview.jpg">
+</div>
 
-<div align=center><img width="800" alt="overview" src="https://github.com/toxic-byte/MZSGO/blob/main/images/overview.jpg"></div>
+## 📖 Overview
 
-## Installation
+**MZSGO** is a novel multimodal framework designed for **Zero-Shot Protein Function Prediction**.
+
+Traditional deep learning approaches often rely solely on sequence patterns and treat functional labels as mere categorical tags, failing to capture the rich semantic information embedded in their definitions. MZSGO bridges this gap by fusing evolutionary signals from **Protein Language Models (PLMs)** with semantic features derived from **Large Language Models (LLMs)**.
+
+By employing an **Adaptive Gated Fusion** mechanism, MZSGO effectively aligns sequence-based and text-based modalities. This allows for robust predictions of Gene Ontology (GO) terms, including unseen long-tail labels and novel functional categories.
+
+### Key Features
+- **Multimodal Integration**: Combines protein sequence embeddings with domain-specific textual descriptions.
+- **Zero-Shot Generalization**: Leverages LLMs to construct a semantic space, enabling prediction of GO labels not seen during training.
+- **Adaptive Gated Fusion**: Dynamically balances the influence of sequence and textual modalities to reduce noise.
+- **Robustness**: Outperforms state-of-the-art methods on standard benchmarks, particularly in zero-shot scenarios.
+
+## 🛠️ Installation
 
 ```bash
 git clone https://github.com/toxic-byte/MZSGO.git
@@ -12,39 +26,78 @@ cd MZSGO
 pip install -r requirements.txt
 ```
 
-## Quick Start
+## 📂 Data Preparation
 
-### 1. Download Resources
-- **Embeddings cache**: [Google Drive](https://drive.google.com/drive/folders/1KAOMWGNiqVIhKJfaffhX5GP0B1ITsj4r) → `data/embeddings_cache/`
+To run the model, you need to download the pre-computed embeddings.
 
-### 2. Prediction
+1. Download **`embeddings_cache.zip`** from [Google Drive](https://drive.google.com/drive/folders/1KAOMWGNiqVIhKJfaffhX5GP0B1ITsj4r).
+2. Unzip the file and place the contents into the `data/embeddings_cache/` directory.
 
+**Directory Structure:**
+```text
+MZSGO/
+├── data/
+│   └── embeddings_cache/  <-- Unzipped files go here
+├── images/
+├── utils/
+├── main.py
+├── predict.py
+└── ...
+```
+
+## 🚀 Quick Start
+
+### 1. Prediction
+
+**Predict specific ontology (BP/MF/CC):**
 ```bash
-# Predict specific ontology (BP/MF/CC)
 python predict.py --fasta example.fasta --pred_mode mf 
+```
 
-#predict 指定的go
+**Predict using a specific list of GO terms:**
+```bash
 python predict.py --fasta example.fasta --go_terms go_terms.txt
+```
 
-# Custom zero-shot prediction
+**Custom Zero-Shot Prediction:**
+*Query the model with a custom function description that may not be in the training set.*
+```bash
 python predict.py --fasta example.fasta \
     --custom_go "protein kinase activity" \
     --custom_ontology mf 
 ```
 
-### 3. Training
+### 2. Training
+
+To train the model on a specific ontology (Biological Process, Molecular Function, or Cellular Component):
 
 ```bash
-# Train specific ontology
+# Train on Biological Process (BP) for 30 epochs
 python main.py --run_mode full --onto bp --epoch_num 30
 ```
 
-### 4. Evaluation
+### 3. Evaluation
 
+**Standard Evaluation:**
 ```bash
-#获得测试集结果
+# Get results on the test set
 python test.py --run_mode full
+```
 
-# Test with zero-shot analysis
+**Zero-Shot Analysis:**
+*Evaluate performance specifically on unseen labels.*
+```bash
 python test.py --run_mode zero
+```
+
+## 📄 Citation
+
+If you find MZSGO useful for your research, please consider citing our paper:
+
+> **A Multimodal Approach for Protein Function Prediction with Zero-Shot Generalization**  
+> *(Preprint / To be updated upon acceptance)*
+
+## 📧 Contact
+
+For any questions or issues, please open an issue on GitHub or contact the authors.
 ```
