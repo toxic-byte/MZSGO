@@ -37,7 +37,7 @@ To run the model, you need to download the pre-computed embeddings.
 ```text
 MZSGO/
 ├── data/
-│   └── embeddings_cache/  <-- Unzipped files go here
+│   └── embeddings_cache/
 ├── images/
 ├── utils/
 ├── main.py
