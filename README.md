@@ -68,7 +68,7 @@ python predict.py --fasta example.fasta \
 
 ### 2. Training
 
-To train the model on a specific ontology (Biological Process, Molecular Function, or Cellular Component):
+**Train the model on a specific ontology:**
 
 ```bash
 python main.py --run_mode full --onto bp --epoch_num 30
