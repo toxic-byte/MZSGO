@@ -1,6 +1,9 @@
-from graph import Prediction, GroundTruth, propagate
+# myparser.py
+from graph import Prediction, GroundTruth, propagate,Graph
 import numpy as np
 import logging
+import re
+
 
 def obo_parser(obo_file, valid_rel=("is_a", "part_of")):
     """
@@ -139,7 +142,6 @@ def pred_parser(pred_file, ontologies, gts, prop_mode, max_terms=None):
             logging.info("Prediction: {}, {}, proteins {}".format(pred_file, ns, len(ids[ns])))
 
     if not predictions:
-        # raise Exception("Empty prediction, check format")
         logging.warning("Empty prediction! Check format or overlap with ground truth")
 
     return predictions
@@ -154,3 +156,154 @@ def ia_parser(file):
                 # term = term[3:]
                 ia_dict[term] = float(ia)
     return ia_dict
+
+def extract_go_description(term_info, name_flag='all'):
+    """Extract GO description from term info"""
+    if name_flag == "name":
+        return term_info['name']
+    
+    elif name_flag == "def":
+        tag_context = term_info.get('def', '')
+        tag_contents = re.findall(r'"(.*?)"', tag_context)
+        if tag_contents:
+            return tag_contents[0]
+        return ''
+    
+    elif name_flag == "all":
+        name_part = term_info['name']
+        def_part = ''
+        tag_context = term_info.get('def', '')
+        tag_contents = re.findall(r'"(.*?)"', tag_context)
+        if tag_contents:
+            def_part = tag_contents[0]
+        
+        if name_part and def_part:
+            return f"{name_part}: {def_part}"
+        elif name_part:
+            return name_part
+        elif def_part:
+            return def_part
+        else:
+            return ''
+    else:
+        raise ValueError(f"Unknown name_flag: {name_flag}. Must be 'name', 'def', or 'all'")
+
+
+def load_go_terms_and_descriptions_from_obo(obo_file, go_terms_file=None, namespace=None, 
+                                            text_mode='all'):
+    """Load GO terms and descriptions from OBO file"""
+    print(f"\n=== Loading Ontology from {obo_file} ===")
+    print(f"Text mode: {text_mode}")
+    
+    term_dict = obo_parser(obo_file)
+    
+    onto_list = []
+    namespace_map = {
+        'bp': 'biological_process',
+        'mf': 'molecular_function',
+        'cc': 'cellular_component'
+    }
+    
+    detected_namespace = None
+    user_specified_terms = False  
+    
+    if go_terms_file:
+        user_specified_terms = True  
+        print(f"\nLoading GO terms from {go_terms_file}")
+        if go_terms_file.endswith('.pkl'):
+            with open(go_terms_file, 'rb') as f:
+                go_terms = pickle.load(f)
+        else:
+            with open(go_terms_file, 'r') as f:
+                go_terms = [line.strip() for line in f if line.strip()]
+        
+        temp_onto_list = []
+        for ns in term_dict:
+            print(f"Loading ontology for detection: {ns}")
+            ont = Graph(ns, term_dict[ns])
+            temp_onto_list.append(ont)
+        
+        go_namespaces = {}
+        for term in go_terms:
+            term_with_prefix = 'GO:' + term if not term.startswith('GO:') else term
+            for ont in temp_onto_list:
+                if term_with_prefix in ont.terms_dict:
+                    go_namespaces[term] = ont.namespace
+                    break
+        
+        unique_namespaces = set(go_namespaces.values())
+        if len(unique_namespaces) == 1:
+            detected_namespace = list(unique_namespaces)[0]
+            print(f"Detected ontology from GO terms: {detected_namespace}")
+        elif len(unique_namespaces) > 1:
+            print(f"Detected GO terms from multiple ontologies: {unique_namespaces}")
+            print(f"  Will predict only the specified {len(go_terms)} GO terms")
+            detected_namespace = 'mixed'  
+        
+        if namespace is None:
+            namespace = detected_namespace
+        
+        onto_list = temp_onto_list
+    
+    if namespace and namespace != 'all' and namespace != 'mixed':
+        if namespace in namespace_map:
+            ns_full = namespace_map[namespace]
+        else:
+            ns_full = namespace
+        
+        onto_list = [ont for ont in onto_list if ont.namespace == ns_full]
+        
+        if not onto_list:
+            if ns_full in term_dict:
+                print(f"Loading ontology: {ns_full}")
+                ont = Graph(ns_full, term_dict[ns_full])
+                onto_list = [ont]
+                print(f"  Terms: {ont.idxs}")
+            else:
+                raise ValueError(f"Namespace {ns_full} not found in OBO file")
+    elif not onto_list:
+        for ns in term_dict:
+            print(f"Loading ontology: {ns}")
+            ont = Graph(ns, term_dict[ns])
+            onto_list.append(ont)
+            print(f"  Terms: {ont.idxs}")
+    
+    if not go_terms_file:
+        go_terms = []
+        for ont in onto_list:
+            for term_id in ont.terms_dict.keys():
+                if term_id.startswith('GO:'):
+                    go_terms.append(term_id.replace('GO:', ''))
+        print(f"\nExtracted {len(go_terms)} GO terms from ontology")
+    
+    print(f"\nGenerating GO descriptions from OBO file (format: {text_mode})...")
+    
+    go_descriptions = []
+    missing_count = 0
+    
+    for term in go_terms:
+        term_with_prefix = 'GO:' + term if not term.startswith('GO:') else term
+        description = None
+        
+        for ont in onto_list:
+            if term_with_prefix in ont.terms_dict:
+                term_info = ont.terms_dict[term_with_prefix]
+                description = extract_go_description(term_info, name_flag=text_mode)
+                break
+        
+        if description is None or description == '':
+            missing_count += 1
+            print(f"Warning: No description found for {term}")
+            description = f"GO term {term}"
+        
+        go_descriptions.append(description)
+    
+    if missing_count > 0:
+        print(f"Warning: {missing_count} terms have missing or empty descriptions")
+    
+    print(f"\nLoaded {len(go_terms)} GO terms with descriptions")
+    print("\nExample GO descriptions:")
+    for i in range(min(3, len(go_terms))):
+        print(f"  {go_terms[i]}: {go_descriptions[i][:100]}{'...' if len(go_descriptions[i]) > 100 else ''}")
+    
+    return go_terms, go_descriptions, onto_list, detected_namespace, user_specified_terms

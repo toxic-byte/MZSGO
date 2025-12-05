@@ -26,7 +26,10 @@ def create_model_and_optimizer(config, train_domain_features, pos_weight=None, t
     elif config['loss']=='bce':
         criterion = nn.BCEWithLogitsLoss()  
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
+    if config['optimizer']=='adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'])
+    elif  config['optimizer']=='adamw':
+        optimizer = torch.optim.AdamW(model.parameters(), lr=config['learning_rate'])
     
     if total_steps is None:
         total_steps = 1000 

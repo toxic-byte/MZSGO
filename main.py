@@ -9,8 +9,8 @@ import argparse
 sys.path.append(r"utils")
 from dataset import obo_graph,load_datasets,process_labels_for_ontology,create_dataloaders,compute_pos_weight,create_ontology_adjacency_matrix
 from config import setup_environment, get_config
-from go_embed import load_nlp_model_name,load_nlp_model_path,compute_nlp_embeddings_list
-from esm_embed import compute_esm_embeddings
+from go_embed import load_nlp_model,compute_nlp_embeddings_list
+from esm_embed import load_esm_model,compute_esm_embeddings
 from domain_embed import load_text_pretrained_domain_features
 from trainer import train_model_for_ontology
 from util import filter_samples_with_labels,save_results,get_ontologies_to_train
@@ -18,13 +18,13 @@ from util import filter_samples_with_labels,save_results,get_ontologies_to_train
 def parse_args():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('--run_mode', type=str, default='full', 
+    parser.add_argument('--run_mode', type=str, default='sample', 
                         choices=['full', 'sample'])
     parser.add_argument('--text_mode', type=str, default='all')
     parser.add_argument('--occ_num', type=int, default=0)
     parser.add_argument('--batch_size_train', type=int, default=16)
     parser.add_argument('--batch_size_test', type=int, default=16)
-    parser.add_argument('--epoch_num', type=int, default=20)
+    parser.add_argument('--epoch_num', type=int, default=1)
     parser.add_argument('--learning_rate', type=float, default=5e-4)
     parser.add_argument('--model', type=str, default='MZSGO')
     parser.add_argument('--nlp_model_type', type=str, default='qwen_4b')
@@ -33,6 +33,7 @@ def parse_args():
     parser.add_argument('--embed_dim', type=int, default=1280)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--loss', type=str, default="bce")
+    parser.add_argument('--optimizer', type=str, default="adam")
     parser.add_argument('--onto', type=str, default="all", choices=['all', 'bp', 'mf', 'cc'])
     
     return parser.parse_args()
@@ -63,9 +64,9 @@ def main():
     
     ontologies_to_train = get_ontologies_to_train(args.onto)
     print(f"Ontologies to train: {ontologies_to_train}")
-    
-    # nlp_tokenizer, nlp_model = load_nlp_model_path(config['nlp_path'])
-    nlp_tokenizer, nlp_model = load_nlp_model_name(config['nlp_name'])
+
+    load_esm_model(config)
+    nlp_tokenizer, nlp_model = load_nlp_model(config)
     
     label_space = {
         'biological_process': [],

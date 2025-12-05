@@ -7,6 +7,7 @@ import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import os
+_domain_embeddings_dict = None
 
 def load_text_pretrained_domain_features(
     train_id, 
@@ -248,3 +249,100 @@ class DomainEmbeddingExtractor:
         print(f"Saved {len(domain_embeddings)} domain embeddings to {output_file}")
         
         return domain_embeddings
+
+def load_domain_embeddings(config):
+    """Load domain embeddings"""
+    global _domain_embeddings_dict
+    
+    if _domain_embeddings_dict is None:
+        domain_text_path = config.get('domain_text_path', None)
+        
+        if os.path.exists(domain_text_path):
+            print(f"Loading domain embeddings from {domain_text_path}...")
+            with open(domain_text_path, 'rb') as f:
+                _domain_embeddings_dict = pickle.load(f)
+            print(f"Loaded {len(_domain_embeddings_dict)} domain embeddings")
+        else:
+            print(f"Warning: Domain embeddings file not found at {domain_text_path}")
+            _domain_embeddings_dict = {}
+    
+    return _domain_embeddings_dict
+
+
+def encode_domain_features_by_list(domain_list, config, aggregation='mean'):
+    """Encode domain features from domain list"""
+    domain_embeddings_dict = load_domain_embeddings(config)
+    
+    if domain_embeddings_dict:
+        sample_key = list(domain_embeddings_dict.keys())[0]
+        sample_value = domain_embeddings_dict[sample_key]
+        if isinstance(sample_value, dict) and 'embedding' in sample_value:
+            embedding_dim = sample_value['embedding'].shape[0]
+        else:
+            embedding_dim = config.get('nlp_dim', 2560)
+    else:
+        embedding_dim = config.get('nlp_dim', 2560)
+    
+    if not domain_list:
+        return torch.zeros(embedding_dim, dtype=torch.float32)
+    
+    valid_embeddings = []
+    for domain in domain_list:
+        if domain in domain_embeddings_dict:
+            emb_data = domain_embeddings_dict[domain]
+            if isinstance(emb_data, dict) and 'embedding' in emb_data:
+                embedding = emb_data['embedding']
+            else:
+                continue
+            valid_embeddings.append(embedding)
+    
+    if len(valid_embeddings) == 0:
+        return torch.zeros(embedding_dim, dtype=torch.float32)
+    
+    valid_embeddings = np.array(valid_embeddings)
+    
+    if aggregation == 'mean':
+        aggregated = np.mean(valid_embeddings, axis=0)
+    elif aggregation == 'max':
+        aggregated = np.max(valid_embeddings, axis=0)
+    elif aggregation == 'sum':
+        aggregated = np.sum(valid_embeddings, axis=0)
+    else:
+        raise ValueError(f"Unknown aggregation method: {aggregation}")
+    
+    return torch.tensor(aggregated, dtype=torch.float32)
+
+
+def encode_domain_features_by_protein_id(protein_id, config, aggregation='mean'):
+    """Encode domain features by protein ID"""
+    domain_embeddings_dict = load_domain_embeddings(config)
+    protein_domain_mapping = load_protein_domain_mapping(config)
+    
+    if domain_embeddings_dict:
+        sample_key = list(domain_embeddings_dict.keys())[0]
+        sample_value = domain_embeddings_dict[sample_key]
+        if isinstance(sample_value, dict) and 'embedding' in sample_value:
+            embedding_dim = sample_value['embedding'].shape[0]
+        else:
+            embedding_dim = config.get('nlp_dim', 2560)
+    else:
+        embedding_dim = config.get('nlp_dim', 2560)
+    
+    domains = protein_domain_mapping.get(protein_id, [])
+    
+    if not domains:
+        return torch.zeros(embedding_dim, dtype=torch.float32)
+    
+    return encode_domain_features_by_list(domains, config, aggregation)
+
+
+def load_protein_domain_mapping(config):
+    """Load protein-domain mapping"""
+    domain_mapping_path = config.get('domain_mapping_path')
+    
+    if domain_mapping_path and os.path.exists(domain_mapping_path):
+        with open(domain_mapping_path, 'rb') as f:
+            mapping = pickle.load(f)
+        return mapping
+    
+    return {}

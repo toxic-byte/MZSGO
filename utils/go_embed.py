@@ -1,3 +1,4 @@
+#go_embed.py
 import os
 import pickle
 import torch
@@ -7,20 +8,32 @@ from transformers import AutoTokenizer, AutoModel
 import re
 
 MAXLEN = 2048
+_nlp_model = None
+_nlp_tokenizer = None
 
-def load_nlp_model_path(nlp_path):
-    nlp_tokenizer = AutoTokenizer.from_pretrained(nlp_path)
-    nlp_model = AutoModel.from_pretrained(nlp_path)
-    nlp_model.cuda()
-    nlp_model.eval()
-    return nlp_tokenizer, nlp_model
-
-def load_nlp_model_name(model_name):
-    nlp_tokenizer = AutoTokenizer.from_pretrained(model_name)
-    nlp_model = AutoModel.from_pretrained(model_name)
-    nlp_model.cuda()
-    nlp_model.eval()
-    return nlp_tokenizer, nlp_model
+def load_nlp_model(config):
+    """Load NLP model"""
+    global _nlp_model, _nlp_tokenizer
+    
+    if _nlp_model is None:
+        print("Loading NLP model...")
+        
+        model_name = config.get('nlp_name', 'Qwen/Qwen3-Embedding-4B')
+        model_path = config.get('nlp_path', None)
+        
+        if model_path and os.path.exists(model_path):
+            _nlp_tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+            _nlp_model = AutoModel.from_pretrained(model_path, trust_remote_code=True)
+        else:
+            _nlp_tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+            _nlp_model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
+        
+        _nlp_model = _nlp_model.cuda()
+        _nlp_model.eval()
+        
+        print(f"NLP model loaded: {model_name}")
+    
+    return _nlp_model, _nlp_tokenizer
 
 def list_embedding(nlp_model, nlp_tokenizer, nlp_dim, key, top_list, cache_path=None, onto=None, pooling='mean', name_flag="all"):
   
@@ -165,6 +178,88 @@ def compute_nlp_embeddings_list(config, nlp_model, nlp_tokenizer, key, label_lis
     )
 
     return embeddings
+
+def encode_go_description_single(go_description, config, pooling='mean'):
+    """Encode a single GO description"""
+    model, tokenizer = load_nlp_model(config)
+    
+    encoded = tokenizer(
+        go_description,
+        return_tensors='pt',
+        max_length=512,
+        truncation=True,
+        padding=True
+    )
+    
+    with torch.no_grad():
+        input_ids = encoded['input_ids'].cuda()
+        attention_mask = encoded['attention_mask'].cuda()
+        
+        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+        last_hidden_state = outputs.last_hidden_state
+        
+        if pooling == 'cls':
+            embedding = last_hidden_state[0, 0, :]
+        elif pooling == 'mean':
+            attention_mask_expanded = attention_mask.unsqueeze(-1).float()
+            sum_embeddings = torch.sum(last_hidden_state * attention_mask_expanded, dim=1)
+            sum_mask = torch.clamp(attention_mask_expanded.sum(dim=1), min=1e-9)
+            embedding = (sum_embeddings / sum_mask).squeeze(0)
+        elif pooling == 'max':
+            attention_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+            last_hidden_state_masked = last_hidden_state.clone()
+            last_hidden_state_masked[attention_mask_expanded == 0] = -1e9
+            embedding = torch.max(last_hidden_state_masked, dim=1)[0].squeeze(0)
+        else:
+            raise ValueError(f"Unsupported pooling method: {pooling}")
+        
+        embedding = embedding.cpu()
+    
+    return embedding
+
+
+def encode_go_descriptions_batch(go_descriptions, config, pooling='mean', batch_size=64):
+    """Encode GO descriptions in batches"""
+    model, tokenizer = load_nlp_model(config)
+    
+    all_embeddings = []
+    
+    for i in tqdm(range(0, len(go_descriptions), batch_size), desc="Encoding GO descriptions"):
+        batch_texts = go_descriptions[i:i + batch_size]
+        
+        encoded = tokenizer(
+            batch_texts,
+            return_tensors='pt',
+            max_length=512,
+            truncation=True,
+            padding=True
+        )
+        
+        with torch.no_grad():
+            input_ids = encoded['input_ids'].cuda()
+            attention_mask = encoded['attention_mask'].cuda()
+            
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            last_hidden_state = outputs.last_hidden_state
+            
+            if pooling == 'cls':
+                embeddings = last_hidden_state[:, 0, :]
+            elif pooling == 'mean':
+                attention_mask_expanded = attention_mask.unsqueeze(-1).float()
+                sum_embeddings = torch.sum(last_hidden_state * attention_mask_expanded, dim=1)
+                sum_mask = torch.clamp(attention_mask_expanded.sum(dim=1), min=1e-9)
+                embeddings = sum_embeddings / sum_mask
+            elif pooling == 'max':
+                attention_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+                last_hidden_state_masked = last_hidden_state.clone()
+                last_hidden_state_masked[attention_mask_expanded == 0] = -1e9
+                embeddings = torch.max(last_hidden_state_masked, dim=1)[0]
+            else:
+                raise ValueError(f"Unsupported pooling method: {pooling}")
+            
+            all_embeddings.append(embeddings.cpu())
+    
+    return torch.cat(all_embeddings, dim=0)
 
 def load_pretrained_go_embeddings(embedding_path, label_list, device='cuda'):
     

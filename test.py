@@ -9,8 +9,8 @@ sys.path.append(r"utils")
 from dataset import (obo_graph, load_datasets, process_labels_for_ontology,
                      create_dataloaders, create_ontology_adjacency_matrix)
 from config import setup_environment, get_config
-from go_embed import load_nlp_model_name, compute_nlp_embeddings_list
-from esm_embed import (compute_esm_embeddings)
+from go_embed import load_nlp_model,compute_nlp_embeddings_list
+from esm_embed import (load_esm_model,compute_esm_embeddings)
 from domain_embed import load_text_pretrained_domain_features
 from model import CustomModel
 from sklearn import preprocessing
@@ -79,7 +79,8 @@ def main_test():
         'molecular_function': args.mf_model_path
     }
     
-    nlp_tokenizer, nlp_model = load_nlp_model_name(config['nlp_name'])
+    load_esm_model(config)
+    nlp_tokenizer, nlp_model = load_nlp_model(config)
  
     label_space = {
         'molecular_function': [],
