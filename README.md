@@ -30,7 +30,7 @@ pip install -r requirements.txt
 
 To run the model, you need to download the pre-computed embeddings.
 
-1. Download **`embeddings_cache.zip`** from [Google Drive](https://drive.google.com/drive/folders/1KAOMWGNiqVIhKJfaffhX5GP0B1ITsj4r).
+1. Download **`embeddings_cache.zip`** from [Google Drive](https://drive.google.com/drive/u/0/folders/1KAOMWGNiqVIhKJfaffhX5GP0B1ITsj4r).
 2. Unzip the file and place the contents into the `data/embeddings_cache/` directory.
 
 **Directory Structure:**
@@ -60,7 +60,6 @@ python predict.py --fasta example.fasta --go_terms go_terms.txt
 ```
 
 **Custom Zero-Shot Prediction:**
-*Query the model with a custom function description that may not be in the training set.*
 ```bash
 python predict.py --fasta example.fasta \
     --custom_go "protein kinase activity" \
@@ -72,7 +71,6 @@ python predict.py --fasta example.fasta \
 To train the model on a specific ontology (Biological Process, Molecular Function, or Cellular Component):
 
 ```bash
-# Train on Biological Process (BP) for 30 epochs
 python main.py --run_mode full --onto bp --epoch_num 30
 ```
 
@@ -85,19 +83,6 @@ python test.py --run_mode full
 ```
 
 **Zero-Shot Analysis:**
-*Evaluate performance specifically on unseen labels.*
 ```bash
 python test.py --run_mode zero
-```
-
-## 📄 Citation
-
-If you find MZSGO useful for your research, please consider citing our paper:
-
-> **A Multimodal Approach for Protein Function Prediction with Zero-Shot Generalization**  
-> *(Preprint / To be updated upon acceptance)*
-
-## 📧 Contact
-
-For any questions or issues, please open an issue on GitHub or contact the authors.
 ```
