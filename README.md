@@ -1,4 +1,4 @@
-# MZSGO: A Multimodal Zero-Shot Framework for Protein Function Prediction
+# MZSGO: a multimodal framework for zero-shot protein function annotation based on evolutionary signals and textual semantics
 
 <div align="center">
   <img width="800" alt="MZSGO Framework Overview" src="https://github.com/toxic-byte/MZSGO/blob/main/images/overview.jpg">
