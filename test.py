@@ -18,6 +18,7 @@ from sklearn import preprocessing
 import torch.nn as nn
 from trainer import evaluate_model_with_unseen
 from test_zero import identify_unseen_labels,print_unseen_label_analysis,save_test_results
+from util import get_ontologies_to_train
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test trained models for protein function prediction')
@@ -31,6 +32,9 @@ def parse_args():
     parser.add_argument('--nlp_model_type', type=str, default='qwen_4b')
     parser.add_argument('--hidden_dim', type=int, default=512)
     parser.add_argument('--dropout', type=float, default=0.5)
+    parser.add_argument('--onto', type=str, default="all", 
+                        choices=['all', 'bp', 'mf', 'cc'],
+                        help='Specify which ontology to test: all/bp/mf/cc')
     
     parser.add_argument('--bp_model_path', type=str, 
                         default='./ckpt/cafa5/MZSGO/biological_process.pt',
@@ -74,6 +78,9 @@ def main_test():
     print('='*80)
     print('Start testing at: {}'.format(datetime.now().strftime("%Y%m%d%H%M%S")))
     
+    ontologies_to_test = get_ontologies_to_train(args.onto)
+    print(f"Ontologies to test: {ontologies_to_test}")
+    
     model_paths = {
         'biological_process': args.bp_model_path,
         'cellular_component': args.cc_model_path,
@@ -102,8 +109,15 @@ def main_test():
     
     all_results = {}
     
-    for key in label_space.keys():
+    for key in ontologies_to_test:
+        print(f"\n{'='*80}")
         print(f"Testing for ontology: {key}")
+        
+        checkpoint_path = model_paths[key]
+        if not os.path.exists(checkpoint_path):
+            print(f"Warning: Model file not found: {checkpoint_path}")
+            print(f"Skipping {key}")
+            continue
         
         label_list, training_labels_binary, test_labels_binary, enc, ia_list, onto_parent, label_num = process_labels_for_ontology(
             config, key, label_space, training_labels, test_labels, onto, enc, ia_dict)
@@ -124,11 +138,6 @@ def main_test():
             test_sequences, test_labels_binary, test_esm_embeddings,
             train_domain_features, test_domain_features)
         
-        checkpoint_path = model_paths[key]
-        if not os.path.exists(checkpoint_path):
-            print(f"Warning: Model file not found: {checkpoint_path}")
-            continue
-        
         model, checkpoint = load_trained_model(checkpoint_path, config, train_domain_features)
         
         metrics = evaluate_model_with_unseen(
@@ -142,41 +151,45 @@ def main_test():
             'seen_count': len(seen_indices)
         }
     
-    save_test_results(config, all_results)
-    
-    print(f"TEST RESULTS SUMMARY")
-    print(f"{'='*80}")
-    for key, result in all_results.items():
-        metrics = result['metrics']
-        print(f"\n{key}:")
-        print(f"  Overall Metrics:")
-        print(f"    Avg Fmax:      {metrics['Fmax']:.4f}★")
-        print(f"    Prop-Fmax:     {metrics['prop_Fmax']:.4f} ")
-        print(f"    AUPR:          {metrics['aupr']:.4f}")
-        print(f"    Prop-AUPR:     {metrics['prop_aupr']:.4f}")
+    if all_results:
+        save_test_results(config, all_results)
         
-        if metrics['unseen'] is not None:
-            print(f"  Unseen Labels ({result['unseen_count']} labels):")
-            print(f"    Avg Fmax:      {metrics['unseen']['Fmax']:.4f}")
-            if 'prop_Fmax' in metrics['unseen']:
-                print(f"    Prop-Fmax:     {metrics['unseen']['prop_Fmax']:.4f}")
-            print(f"    AUPR:          {metrics['unseen']['aupr']:.4f} ★")
-            if 'prop_aupr' in metrics['unseen']:
-                print(f"    Prop-AUPR:     {metrics['unseen']['prop_aupr']:.4f}")
+        print(f"\n{'='*80}")
+        print(f"TEST RESULTS SUMMARY")
+        print(f"{'='*80}")
+        for key, result in all_results.items():
+            metrics = result['metrics']
+            print(f"\n{key}:")
+            print(f"  Overall Metrics:")
+            print(f"    Avg Fmax:      {metrics['Fmax']:.4f}★")
+            print(f"    Prop-Fmax:     {metrics['prop_Fmax']:.4f} ")
+            print(f"    AUPR:          {metrics['aupr']:.4f}")
+            print(f"    Prop-AUPR:     {metrics['prop_aupr']:.4f}")
+            
+            if metrics['unseen'] is not None:
+                print(f"  Unseen Labels ({result['unseen_count']} labels):")
+                print(f"    Avg Fmax:      {metrics['unseen']['Fmax']:.4f}")
+                if 'prop_Fmax' in metrics['unseen']:
+                    print(f"    Prop-Fmax:     {metrics['unseen']['prop_Fmax']:.4f}")
+                print(f"    AUPR:          {metrics['unseen']['aupr']:.4f} ★")
+                if 'prop_aupr' in metrics['unseen']:
+                    print(f"    Prop-AUPR:     {metrics['unseen']['prop_aupr']:.4f}")
+            
+            if metrics['seen'] is not None:
+                print(f"  Seen Labels ({result['seen_count']} labels):")
+                print(f"    Avg Fmax:      {metrics['seen']['Fmax']:.4f}")
+                if 'prop_Fmax' in metrics['seen']:
+                    print(f"    Prop-Fmax:     {metrics['seen']['prop_Fmax']:.4f}")
+                print(f"    AUPR:          {metrics['seen']['aupr']:.4f} ★")
+                if 'prop_aupr' in metrics['seen']:
+                    print(f"    Prop-AUPR:     {metrics['seen']['prop_aupr']:.4f}")
+            
+            if metrics['harmonic_mean'] is not None:
+                print(f"  Harmonic Mean:   {metrics['harmonic_mean']:.4f} ★★")
         
-        if metrics['seen'] is not None:
-            print(f"  Seen Labels ({result['seen_count']} labels):")
-            print(f"    Avg Fmax:      {metrics['seen']['Fmax']:.4f}")
-            if 'prop_Fmax' in metrics['seen']:
-                print(f"    Prop-Fmax:     {metrics['seen']['prop_Fmax']:.4f}")
-            print(f"    AUPR:          {metrics['seen']['aupr']:.4f} ★")
-            if 'prop_aupr' in metrics['seen']:
-                print(f"    Prop-AUPR:     {metrics['seen']['prop_aupr']:.4f}")
-        
-        if metrics['harmonic_mean'] is not None:
-            print(f"  Harmonic Mean:   {metrics['harmonic_mean']:.4f} ★★")
-    
-    print(f"{'='*80}\n")
+        print(f"{'='*80}\n")
+    else:
+        print("\nNo results to display. Please check model paths and ontology selection.")
     
     print('End testing at: {}'.format(datetime.now().strftime("%Y%m%d%H%M%S")))
 
