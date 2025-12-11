@@ -1,7 +1,7 @@
 # MZSGO:multimodal zero-shot protein function annotation via evolutionary signals and textual semantics
 
 <div align="center">
-  <img width="800" alt="MZSGO Framework Overview" src="https://github.com/toxic-byte/MZSGO/blob/main/images/overview.jpg">
+  <img width="800" alt="MZSGO Framework Overview" src="https://github.com/toxic-byte/MZSGO/blob/main/images/model_v3.tif">
 </div>
 
 ## 📖 Overview
